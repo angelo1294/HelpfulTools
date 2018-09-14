@@ -10,7 +10,8 @@ def networksToHosts(listOfNetworks):
 	return listOfHosts
 
 listOfNetworks = ['10.109.14.0/24', '10.109.15.0/24', '10.109.31.0/24', '10.109.32.0/24']
-listOfHosts = networksToHosts(listOfNetworks)
+#listOfHosts = networksToHosts(listOfNetworks)
+listOfHosts = ['qa-u16-ipopescu2.spirenteng.com']
 for host in listOfHosts:
 	try:
 		s = pxssh.pxssh(timeout=2)
