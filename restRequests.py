@@ -3,6 +3,9 @@ import json, ast
 
 
 vel = "vel-agrama-latest"
+topologyIdList = ['84b239c7-a9b4-4d4d-8a70-8679c4d9e2ca', 'cbc768e9-5880-4175-81ab-abf0780f32cf', '5770acaf-196c-4603-8dc7-08b01c00febc', '5e9e298a-5c6c-49ab-ab1c-95b9a643edf2', '244f0679-012b-4804-8ff1-aa39c10ce1f9', '1d8a6279-9dc1-4b61-81e1-8e96854b7ca6', 'ba5db289-e925-4093-bec6-e82055f52005', '996041a6-7544-48ad-acb6-2ffbf812ee50', 'd7e11515-41c7-47c8-ab8d-198e0ed4a2da', 'bfd2ccea-fa5b-4ce0-9a7d-510790b0cbc0', 'ad233b8f-c5e3-4e65-9fa9-d3b7ebfc697a', 
+'d1a5917b-4af3-44bb-8cde-f2677b4387ca', '4d6eb14a-1b4b-4d72-8c09-2aa08f246007', '49c4ebde-53c7-4e77-9eb9-b6dcbdf716a9']
+
 ###############################
 ##Create vSphere Clouds########
 ###############################
@@ -49,7 +52,7 @@ def createOpenStackClouds (velo, qty='', startIndex='', stopIndex=''):
                            headers={'Content-type': 'application/json'})
         print(rq.text)
 ###############################
-##Create topologies###########
+##Create topologies############
 ###############################
 def createCopyTopologies (velo, topologyId, qty='', startIndex='', stopIndex=''):
     BaseUrlPOST = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology?copyFrom="+topologyId
@@ -84,7 +87,7 @@ def createCopyTopologies (velo, topologyId, qty='', startIndex='', stopIndex='')
                           headers={'Content-type': 'application/json'})
         print(rq.text)
 ###################################################################################################################################
-##Create port groups###########Start from a parent device with port group and create devices and port groups linked to this parent#
+##Create port groups##########Start from a parent device with port group and create devices and port groups linked to this parent##
 ###################################################################################################################################
 def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', startIndex='', stopIndex='', portsPerGroup=''):
     devicePostUrl = "https://"+velo+".spirenteng.com/velocity/api/inventory/v8/device"
@@ -137,7 +140,28 @@ def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', s
         portsBodyResult = json.dumps(portsBody.copy())
         rq = requests.post(portPostUrl, data=portsBodyResult, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
+###################################
+#######Reserve topologies##########
+###################################
+def reserveTopologies(velo, topologyIdList, start='', end='', duration='600'):
+    postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
+    for i,topId in enumerate(topologyIdList):
+        raw = {}
+        raw['name'] = 'Topology reservation test' + str(i)
+        if duration:
+            raw['duration'] = duration
+        if start:
+            raw['start'] = start
+        if end:
+            raw['end'] = end
+        raw['topologyId'] = topId
+        #print(raw)
+        raw = json.dumps(raw)
+        rq = requests.post(postReservationUrl, data=raw, verify=False, auth=('spirent', 'spirent'),
+                          headers={'Content-type': 'application/json'})
+        print(rq.text)
 
-
-#createPortGroups(vel,groupId = 'f8d5d66f-418b-4b90-96ca-73574916704a', deviceTemplateId='fea52e8b-8d75-455e-baa5-80751d9625c7', portTemplateId="a5266606-f35b-482b-8c3f-a4317c1ccbb9", qty=70, portsPerGroup=256)
-createCopyTopologies(vel,topologyId='39f275d1-7d0c-45a0-bb07-96614b2011fe', qty=50)
+############################
+########Execute#############
+############################
+reserveTopologies(vel, topologyIdList, duration='120', start='1540820305000')
