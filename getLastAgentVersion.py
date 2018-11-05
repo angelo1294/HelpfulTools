@@ -1,12 +1,15 @@
 import sys, paramiko, time
 
+######################################################
+#######Message is shown only in case of failing#######
+######################################################
 #Variables
-hostname = "qa-u16-agrama.spirenteng.com"
-password = "admin"
-username = "root"
+hostname = ""
+password = ""
+username = ""
 port = '22'
 path = 'velocityAgent/' 
-agentPath = 'https://jenkins-itest.spirenteng.com/jenkins/view/qa_itest/job/itest_Installer_nightly/lastSuccessfulBuild/artifact/artifacts/velocity-agent-linux.gtk.x86_64.zip'
+agentPath = 'https://jenkins-itest.spirenteng.com/jenkins/view/qa_itest/job/itest_Installer_rel_7x/lastSuccessfulBuild/artifact/artifacts/velocity-agent-linux.gtk.x86_64.zip'
 requirements =['pool=driver', 'pool=startupteardown', 'pool=triggered']
 #Connect via ssh 
 try:
@@ -19,12 +22,20 @@ try:
 		if 'velocity-agent' in stdout.read().decode('ascii'):
 			stdin, stdout, stderr = client.exec_command('rm -rf ' + path + 'velocity-agent')
 		stdin, stdout, stderr = client.exec_command('wget '+ agentPath)
-		time.sleep(15)
+		exit_status = stdout.channel.recv_exit_status()
+		if exit_status == 0:
+			print("Get Velocity Agent zip successfull")
+		else:
+			print("Error when downloading agent: ", exit_status)
 	except:
-		print("Command failed to remove or get:" + stdout.read())
+		print("Command failed to remove or get: " + stdout.read())
 	try:
 		stdin, stdout, stderr = client.exec_command('unzip velocity-agent-linux.gtk.x86_64.zip -d velocityAgent/')
-		time.sleep(10)
+		exit_status = stdout.channel.recv_exit_status()
+		if exit_status == 0:
+			print("Unzip finished")
+		else:
+			print("Error when extracting agent", exit_status)
 		stdin, stdout, stderr = client.exec_command('rm -rf ' + 'velocity-agent-linux.gtk.x86_64.zip')
 		stdin, stdout, stderr = client.exec_command("printf " 
 													+ 	'"%s"' % ''.join([result+'\n' for result in requirements]) 
