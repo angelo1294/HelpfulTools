@@ -1,10 +1,19 @@
 import requests 
 import json, ast
+import time
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import yaml
 
-
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+############################
+######Global Variables######
+############################
+toDelete = {}              #Dictionary of lists containing elements to delete
 vel = "vel-agrama-latest"
-topologyIdList = ['84b239c7-a9b4-4d4d-8a70-8679c4d9e2ca', 'cbc768e9-5880-4175-81ab-abf0780f32cf', '5770acaf-196c-4603-8dc7-08b01c00febc', '5e9e298a-5c6c-49ab-ab1c-95b9a643edf2', '244f0679-012b-4804-8ff1-aa39c10ce1f9', '1d8a6279-9dc1-4b61-81e1-8e96854b7ca6', 'ba5db289-e925-4093-bec6-e82055f52005', '996041a6-7544-48ad-acb6-2ffbf812ee50', 'd7e11515-41c7-47c8-ab8d-198e0ed4a2da', 'bfd2ccea-fa5b-4ce0-9a7d-510790b0cbc0', 'ad233b8f-c5e3-4e65-9fa9-d3b7ebfc697a', 
-'d1a5917b-4af3-44bb-8cde-f2677b4387ca', '4d6eb14a-1b4b-4d72-8c09-2aa08f246007', '49c4ebde-53c7-4e77-9eb9-b6dcbdf716a9']
+vSphereTopologyIdList = ['cd2da007-f9ba-4559-b75b-e7dc5a54db96', '6353b2ba-c602-419f-843e-820487b9d71e', '8e308f2c-779d-4a8e-b41d-d226b1cff36b', '0eefe448-b3ce-4f94-8aaf-e4ec6ba0ff9e', '655340c8-6490-4fd6-a160-8592469ed26e', '5794ec9c-ec9e-4ab6-9f58-09ec84d8362a',
+                            '1148d3dd-b922-42b4-a4a5-83962d74a778', 'e346cc72-a737-430d-b832-51b79539d3de', 'e4798915-6a59-4a94-92e7-2c8402c6d582', 'c329dabf-59d5-4a6d-a412-d8a6e62ffe53', '8d440d5f-ad39-4e5a-98ec-c2d52178d3d8', '5ae15b68-3ff1-4d7a-b5e0-5dc1e274a2b8']
+openStackTopologyIdList = ['3e665ff3-c7d3-4856-ac48-17e3d01f0ba6', '5da442fc-9ded-49ae-853d-39eadd651799', '7a32335d-2ffa-4c85-9a50-0ed033c97a7d', 'b7343b27-689a-41c6-b481-f19ab77e9b0f', '2307f9bf-4e68-4c4a-8feb-107e174feaca', 
+                            '677d17bf-410d-41da-b537-76d1edbad899', 'daa0b20f-f6c2-467d-9b72-8c7877f83783', '84518a20-d7d2-431b-9447-5ddb6b50fdf6', '62c3508a-839b-4daa-9003-36aa45b1a6b1', 'affad43d-6f82-4c81-baa5-e24f806dc2ba']
 
 ###############################
 ##Create vSphere Clouds########
@@ -51,11 +60,18 @@ def createOpenStackClouds (velo, qty='', startIndex='', stopIndex=''):
         rq = requests.post(BaseUrl, data=body, verify=False, auth=('spirent', 'spirent'),
                            headers={'Content-type': 'application/json'})
         print(rq.text)
-###############################
-##Create topologies############
-###############################
-def createCopyTopologies (velo, topologyId, qty='', startIndex='', stopIndex=''):
-    BaseUrlPOST = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology?copyFrom="+topologyId
+########################################
+##Copy published abstract topology######
+########################################
+def createCopyTopologies (velo, topologyBody, qty='', startIndex='', stopIndex=''):
+    initPostUrl = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology"
+####Post initial topology#####
+    rq = requests.post(initPostUrl, data=topologyBody, verify=False, auth=('spirent', 'spirent'),
+                          headers={'Content-type': 'application/vnd.spirent-velocity.topology.tosca+yaml'})
+    initial = json.loads(rq.text)
+    if 'errorId' in rq.text:
+            print('Topology creation error. Message: ' + initial['message'])
+    copyPostUrl = initPostUrl + '?copyFrom=' + initial['id']
     if qty and startIndex: 
         stopIndex = qty + startIndex - 1 
     elif qty: 
@@ -63,12 +79,16 @@ def createCopyTopologies (velo, topologyId, qty='', startIndex='', stopIndex='')
         stopIndex = qty
     for i in range(startIndex, stopIndex+1):
         raw = {}
-        raw['name'] = 'Leveling performance ' + str(i)
+        raw['name'] = 'Rest Performance Topology ' + str(i)
         raw['isAbstract'] = 'true'
         raw = json.dumps(raw)
-        rq = requests.post(BaseUrlPOST, data=raw, verify=False, auth=('spirent', 'spirent'),
+        rq = requests.post(copyPostUrl, data=raw, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
         result = json.loads(rq.text)
+        if 'errorId' in rq.text:
+            print('Topology copy error. Message: ' + result['message'])
+        else:
+            toDelete.append(result['id'])
         BaseUrlPUT = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology/" + result['id']
         body = {}
         body['isDraft'] = 'false'
@@ -76,6 +96,8 @@ def createCopyTopologies (velo, topologyId, qty='', startIndex='', stopIndex='')
         rq = requests.put(BaseUrlPUT, data=body, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
         topology = json.loads(rq.text)
+        if 'errorId' in rq.text:
+            print('Topology publishing error. Message: ' + topology['message'])
 ####Create reservation########
         postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
         reservationBody = {}
@@ -146,6 +168,7 @@ def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', s
 def reserveTopologies(velo, topologyIdList, start='', end='', duration='600'):
     postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
     for i,topId in enumerate(topologyIdList):
+        time.sleep(5)
         raw = {}
         raw['name'] = 'Topology reservation test' + str(i)
         if duration:
@@ -160,8 +183,51 @@ def reserveTopologies(velo, topologyIdList, start='', end='', duration='600'):
         rq = requests.post(postReservationUrl, data=raw, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
         print(rq.text)
+###################################
+#######Create Resources(PC)########
+###################################        
+def createResources(velo, qty='', startIndex='', stopIndex='', templateId=''):
+    BaseUrl = "https://" + velo + ".spirenteng.com/velocity/api/inventory/v7/device"
+    delUrl = "https://" + velo + "/velocity/api/inventory/v8/device/"
+    templateId = 'fea52e8b-8d75-455e-baa5-80751d9625c7'
+    toDelete = []
+    if qty and startIndex: 
+        stopIndex = qty + startIndex - 1 
+    elif qty: 
+        startIndex = 1
+        stopIndex = qty
+    for i in range(startIndex, stopIndex+1):
+        raw = {}
+        raw['name'] = 'RestApiPC' + str(i)
+        raw['templateId'] = templateId
+        body = json.dumps(raw.copy())
+        rq = requests.post(BaseUrl, data=body, verify=False, auth=('spirent', 'spirent'),
+                           headers={'Content-type': 'application/json'})
+        result = json.loads(rq.text)
+        if 'errorId' in rq.text:
+            print('Resource creation error. Message: ' + result['message'])
+        else:
+            toDelete.append(result['id'])
+        
+    #cleanup(delUrl, toDelete)
+    return delUrl, toDelete
+################################################
+#########Cleanup Procedure######################
+################################################
+def cleanup(toDelete={}):
+    for keyUrl in toDelete:
+        delList = toDelete[keyUrl]
+        for elem in delList:
+            delUrl = keyUrl + elem
+            rq = requests.delete(delUrl, verify=False, auth=('spirent', 'spirent'))
+            result = rq.text
+            if 'error' in rq.text:
+                print('Item delete error. Message: ' + result['message'])
+
+
 
 ############################
 ########Execute#############
 ############################
-reserveTopologies(vel, topologyIdList, duration='120', start='1540820305000')
+#reserveTopologies(vel, vSphereTopologyIdList, duration='120', start='1541069309000')
+#createResources(vel, qty=1)

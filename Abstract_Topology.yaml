@@ -1,0 +1,26 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+imports:
+- velocity_types_1_0.yaml
+topology_template:
+  node_templates:
+    topology:
+      type: com.spirent.velocity.Topology
+      properties:
+        name: Abstract Topology
+    device_i48b1387d-c374-465b-8cb2-8ccf29c8a04d:
+      type: com.spirent.velocity.Device
+      properties:
+        id: i48b1387d-c374-465b-8cb2-8ccf29c8a04d
+        name: PC
+        inventory_id: fea52e8b-8d75-455e-baa5-80751d9625c7
+        condition: template[PC]
+        shared: true
+        skip_validation: false
+        boundary:
+          height: 100
+          width: 100
+          x: 612
+          y: 261
+        icon_id: 520221cc-7ed2-45e7-9b52-9cfb35706826
+        icon_uri: ilo://api/0/resource/icon?id=fea52e8b-8d75-455e-baa5-80751d9625c7
+        shape: RECTANGLE

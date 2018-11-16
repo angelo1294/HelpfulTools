@@ -4,9 +4,9 @@ import sys, paramiko, time
 #######Message is shown only in case of failing#######
 ######################################################
 #Variables
-hostname = ""
-password = ""
-username = ""
+hostname = "qa-u16-agrama"
+password = "root"
+username = "admin"
 port = '22'
 path = 'velocityAgent/' 
 agentPath = 'https://jenkins-itest.spirenteng.com/jenkins/view/qa_itest/job/itest_Installer_rel_7x/lastSuccessfulBuild/artifact/artifacts/velocity-agent-linux.gtk.x86_64.zip'
