@@ -1,6 +1,9 @@
 import restRequests
 import yaml
 import argparse
+import atexit
+
+
 
 ######Arguments parser##############
 parser = argparse.ArgumentParser(description=
@@ -24,17 +27,25 @@ toDelete = {}
 
 '''			Beginning of Execution
 '''
+######At script exit -> call cleanup##############
+#atexit.register(restRequests.cleanup,toDelete)
 
 ###################################################
 ###Create resources and update cleaning object#####
 ###################################################
-# delUrl, resourceIdList = restRequests.createResources(velo, args.resources)
-# toDelete[delUrl] = resourceIdList
+delUrl, resourceIdList = restRequests.createResources(velo, 1)
+toDelete[delUrl] = resourceIdList
 
 ############################################
 ###Publish topology and copy it X times#####
 ############################################
-# delUrl, topologyIdList = restRequests.createCopyTopologies(velo, 'Abstract_topology.yaml', qty=args.topologies, withResources=True)
-# toDelete[delUrl] = topologyIdList
+delUrl, topologyIdList = restRequests.createCopyTopologies(velo, 'Abstract_topology.yaml', qty=1)
+toDelete[delUrl] = topologyIdList
 
-#restRequests.cleanup(toDelete)
+############################################
+##########Reserve topologies################
+############################################
+# delUrl, topologyIdList = restRequests.reserveTopologies(velo, topologyIdList)
+# toDelete[delUrl] = topologyIdList
+restRequests.reserveTopologies(velo, topologyIdList)
+

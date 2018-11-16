@@ -16,16 +16,22 @@ openStackTopologyIdList = ['3e665ff3-c7d3-4856-ac48-17e3d01f0ba6', '5da442fc-9de
                             '677d17bf-410d-41da-b537-76d1edbad899', 'daa0b20f-f6c2-467d-9b72-8c7877f83783', '84518a20-d7d2-431b-9447-5ddb6b50fdf6', '62c3508a-839b-4daa-9003-36aa45b1a6b1', 'affad43d-6f82-4c81-baa5-e24f806dc2ba']
 
 ###############################
-##Create vSphere Clouds########
+##Index Management#############
 ###############################
-def createVsphereClouds (velo, qty='', startIndex='', stopIndex=''):
-    BaseUrl = "https://"+velo+".spirenteng.com/velocity/api/cloud/v4/cloud"
+def indexManagement(qty='', startIndex='', stopIndex=''):
     if qty and startIndex: 
         stopIndex = qty + startIndex - 1 
     elif qty: 
         startIndex = 1
         stopIndex = qty
+    return startIndex, stopIndex
 
+###############################
+##Create vSphere Clouds########
+###############################
+def createVsphereClouds (velo, qty='', startIndex='', stopIndex=''):
+    BaseUrl = "https://"+velo+".spirenteng.com/velocity/api/cloud/v4/cloud"
+    startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
     for i in range(startIndex, stopIndex+1):
         body = {}
         body['providerType'] = 'VMWARE'
@@ -37,16 +43,13 @@ def createVsphereClouds (velo, qty='', startIndex='', stopIndex=''):
         rq = requests.post(BaseUrl, data=body, verify=False, auth=('spirent', 'spirent'),
                            headers={'Content-type': 'application/json'})
         print(rq.text)
+
 ###############################
 ##Create OpenStack clouds######
 ###############################
 def createOpenStackClouds (velo, qty='', startIndex='', stopIndex=''):
     BaseUrl = "https://"+velo+".spirenteng.com/velocity/api/cloud/v4/cloud"
-    if qty and startIndex: 
-        stopIndex = qty + startIndex - 1 
-    elif qty: 
-        startIndex = 1
-        stopIndex = qty
+    startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
 
     for i in range(startIndex, stopIndex+1):
         body = {}
@@ -60,16 +63,14 @@ def createOpenStackClouds (velo, qty='', startIndex='', stopIndex=''):
         rq = requests.post(BaseUrl, data=body, verify=False, auth=('spirent', 'spirent'),
                            headers={'Content-type': 'application/json'})
         print(rq.text)
+
 ########################################
 ##Copy published abstract topology######
 ########################################
-def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopIndex='', withResources=False):
+def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopIndex=''):
     initPostUrl = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology"
-    toDelete = []
     delUrl = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology/"
-####Create resources if user requests######
-    if withResources:
-        createResources(velo, qty)
+    toDelete = []
 ####Post initial topology#####
     with open(topologyBodyPath, 'r') as stream:
         try:
@@ -81,17 +82,10 @@ def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopInd
         headers={'Content-type': 'application/vnd.spirent-velocity.topology.tosca+yaml'})
     initial = json.loads(rq.text)
     if 'errorId' in rq.text:
-        print('Topology copy error. Message: ' + initial['message'])
-    else:
-        toDelete.append(initial['id'])
-    if 'errorId' in rq.text:
-            print('Topology creation error. Message: ' + initial['message'])
+        print('Topology creation error. Message: ' + initial['message'])
     copyPostUrl = initPostUrl + '?copyFrom=' + initial['id']
-    if qty and startIndex: 
-        stopIndex = qty + startIndex - 1 
-    elif qty: 
-        startIndex = 1
-        stopIndex = qty
+####Index Management###########
+    startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
 ####Copy the topology and publish it########
     for i in range(startIndex, stopIndex+1):
         raw = {}
@@ -112,6 +106,8 @@ def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopInd
             print('Topology publishing error. Message: ' + topology['message'])
         else:
             toDelete.append(topology['id'])
+    # initialTop = delUrl + initial['id']
+    rq = requests.delete(delUrl + initial['id'], verify=False, auth=('spirent', 'spirent'))
     return delUrl, toDelete
 ####Create reservation########
         # postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
@@ -123,14 +119,13 @@ def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopInd
         # rq = requests.post(postReservationUrl, data=reservationBody, verify=False, auth=('spirent', 'spirent'),
         #                   headers={'Content-type': 'application/json'})
         # print(rq.text)
+
 ###################################################################################################################################
 ##Create port groups##########Start from a parent device with port group and create devices and port groups linked to this parent##
 ###################################################################################################################################
-def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', startIndex='', stopIndex='', portsPerGroup=''):
+def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', startIndex='', stopIndex='', portsPerGroup='5'):
     devicePostUrl = "https://"+velo+".spirenteng.com/velocity/api/inventory/v8/device"
 ####Create ports json#################
-    if not portsPerGroup:
-        portsPerGroup = 5
     portsBody = {}
     portsBody['ports'] = []
     port = {}
@@ -140,13 +135,9 @@ def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', s
         port['templateId'] = portTemplateId
         portsBody['ports'].append(port.copy())
 ####Index management##########################
-    if qty and startIndex: 
-        stopIndex = qty + startIndex - 1 
-    elif qty: 
-        startIndex = 1
-        stopIndex = qty
-    for i in range(startIndex, stopIndex+1):
+    startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
 ########Device handling######################
+    for i in range(startIndex, stopIndex+1):
         deviceBody = {}
         deviceBody['name'] = 'Performance Port Group Test ' + str(i)
         deviceBody['templateId'] = deviceTemplateId
@@ -177,15 +168,16 @@ def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', s
         portsBodyResult = json.dumps(portsBody.copy())
         rq = requests.post(portPostUrl, data=portsBodyResult, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
+
 ###################################
 #######Reserve topologies##########
 ###################################
 def reserveTopologies(velo, topologyIdList, start='', end='', duration='600'):
     postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
+    toDelete = []
     for i,topId in enumerate(topologyIdList):
-        time.sleep(5)
         raw = {}
-        raw['name'] = 'Topology reservation test' + str(i)
+        raw['name'] = 'Topology reservation test' + str(i+1) 
         if duration:
             raw['duration'] = duration
         if start:
@@ -193,11 +185,14 @@ def reserveTopologies(velo, topologyIdList, start='', end='', duration='600'):
         if end:
             raw['end'] = end
         raw['topologyId'] = topId
-        #print(raw)
-        raw = json.dumps(raw)
-        rq = requests.post(postReservationUrl, data=raw, verify=False, auth=('spirent', 'spirent'),
+        rq = requests.post(postReservationUrl, data=json.dumps(raw), verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
-        print(rq.text)
+        result = json.loads(rq.text)
+        print(result)
+    #     toDelete.append(result['id'])
+    # return postReservationUrl, toDelete
+
+
 ###################################
 #######Create Resources(PC)########
 ###################################        
@@ -206,11 +201,9 @@ def createResources(velo, qty='', startIndex='', stopIndex='', templateId=''):
     delUrl = "https://" + velo + "/velocity/api/inventory/v8/device/"
     templateId = 'fea52e8b-8d75-455e-baa5-80751d9625c7'
     toDelete = []
-    if qty and startIndex: 
-        stopIndex = qty + startIndex - 1 
-    elif qty: 
-        startIndex = 1
-        stopIndex = qty
+####Index Management#####
+    startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
+####Create resources#####
     for i in range(startIndex, stopIndex+1):
         raw = {}
         raw['name'] = 'RestApiPC' + str(i)
@@ -226,6 +219,7 @@ def createResources(velo, qty='', startIndex='', stopIndex='', templateId=''):
         
     #cleanup(delUrl, toDelete)
     return delUrl, toDelete
+
 ################################################
 #########Cleanup Procedure######################
 ################################################
@@ -235,10 +229,12 @@ def cleanup(toDelete={}):
         for elem in delList:
             delUrl = keyUrl + elem
             rq = requests.delete(delUrl, verify=False, auth=('spirent', 'spirent'))
-            result = rq.text
-            if 'error' in rq.text:
-                print('Item delete error. Message: ' + result['message'])
-
+            result = json.loads(rq.text)
+            try:
+                if 'error' in rq.text:
+                    print('Item delete error. Message: ' + result['message'])
+            except:
+                print('Script error in cleanup.Result object: \n' + result)
 
 
 ############################

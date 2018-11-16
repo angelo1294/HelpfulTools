@@ -12,7 +12,6 @@ topology_template:
       properties:
         id: i48b1387d-c374-465b-8cb2-8ccf29c8a04d
         name: PC
-        inventory_id: fea52e8b-8d75-455e-baa5-80751d9625c7
         condition: template[PC]
         shared: true
         skip_validation: false
@@ -21,6 +20,4 @@ topology_template:
           width: 100
           x: 612
           y: 261
-        icon_id: 520221cc-7ed2-45e7-9b52-9cfb35706826
-        icon_uri: ilo://api/0/resource/icon?id=fea52e8b-8d75-455e-baa5-80751d9625c7
         shape: RECTANGLE
