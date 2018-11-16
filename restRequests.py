@@ -63,12 +63,27 @@ def createOpenStackClouds (velo, qty='', startIndex='', stopIndex=''):
 ########################################
 ##Copy published abstract topology######
 ########################################
-def createCopyTopologies (velo, topologyBody, qty='', startIndex='', stopIndex=''):
+def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopIndex='', withResources=False):
     initPostUrl = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology"
+    toDelete = []
+    delUrl = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology/"
+####Create resources if user requests######
+    if withResources:
+        createResources(velo, qty)
 ####Post initial topology#####
-    rq = requests.post(initPostUrl, data=topologyBody, verify=False, auth=('spirent', 'spirent'),
-                          headers={'Content-type': 'application/vnd.spirent-velocity.topology.tosca+yaml'})
+    with open(topologyBodyPath, 'r') as stream:
+        try:
+            topologyBody = yaml.load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+    data = yaml.dump(topologyBody, default_flow_style=False)
+    rq = requests.post(initPostUrl, data=data, verify=False, auth=('spirent', 'spirent'),
+        headers={'Content-type': 'application/vnd.spirent-velocity.topology.tosca+yaml'})
     initial = json.loads(rq.text)
+    if 'errorId' in rq.text:
+        print('Topology copy error. Message: ' + initial['message'])
+    else:
+        toDelete.append(initial['id'])
     if 'errorId' in rq.text:
             print('Topology creation error. Message: ' + initial['message'])
     copyPostUrl = initPostUrl + '?copyFrom=' + initial['id']
@@ -77,6 +92,7 @@ def createCopyTopologies (velo, topologyBody, qty='', startIndex='', stopIndex='
     elif qty: 
         startIndex = 1
         stopIndex = qty
+####Copy the topology and publish it########
     for i in range(startIndex, stopIndex+1):
         raw = {}
         raw['name'] = 'Rest Performance Topology ' + str(i)
@@ -85,10 +101,6 @@ def createCopyTopologies (velo, topologyBody, qty='', startIndex='', stopIndex='
         rq = requests.post(copyPostUrl, data=raw, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
         result = json.loads(rq.text)
-        if 'errorId' in rq.text:
-            print('Topology copy error. Message: ' + result['message'])
-        else:
-            toDelete.append(result['id'])
         BaseUrlPUT = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology/" + result['id']
         body = {}
         body['isDraft'] = 'false'
@@ -98,16 +110,19 @@ def createCopyTopologies (velo, topologyBody, qty='', startIndex='', stopIndex='
         topology = json.loads(rq.text)
         if 'errorId' in rq.text:
             print('Topology publishing error. Message: ' + topology['message'])
+        else:
+            toDelete.append(topology['id'])
+    return delUrl, toDelete
 ####Create reservation########
-        postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
-        reservationBody = {}
-        reservationBody['name'] = 'Reservation of test Topology ' + str(i)
-        reservationBody['duration'] = '300'
-        reservationBody['topologyId'] = topology['id']
-        reservationBody = json.dumps(reservationBody)
-        rq = requests.post(postReservationUrl, data=reservationBody, verify=False, auth=('spirent', 'spirent'),
-                          headers={'Content-type': 'application/json'})
-        print(rq.text)
+        # postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
+        # reservationBody = {}
+        # reservationBody['name'] = 'Reservation of test Topology ' + str(i)
+        # reservationBody['duration'] = '300'
+        # reservationBody['topologyId'] = topology['id']
+        # reservationBody = json.dumps(reservationBody)
+        # rq = requests.post(postReservationUrl, data=reservationBody, verify=False, auth=('spirent', 'spirent'),
+        #                   headers={'Content-type': 'application/json'})
+        # print(rq.text)
 ###################################################################################################################################
 ##Create port groups##########Start from a parent device with port group and create devices and port groups linked to this parent##
 ###################################################################################################################################
@@ -231,3 +246,4 @@ def cleanup(toDelete={}):
 ############################
 #reserveTopologies(vel, vSphereTopologyIdList, duration='120', start='1541069309000')
 #createResources(vel, qty=1)
+#createCopyTopologies()
