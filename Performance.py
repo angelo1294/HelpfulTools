@@ -43,7 +43,7 @@ atexit.register(restRequests.cleanup, toDelete=toDelete, velo=velo)
 ###################################################
 '''			Beginning of Execution
 '''
-resources = restRequests.createResources(velo, 3)
+resources = restRequests.createResources(velo, args.resources)
 toDelete = updateToDelete(resources, toDelete)
 
 ############################################
@@ -51,7 +51,7 @@ toDelete = updateToDelete(resources, toDelete)
 ############################################
 '''			X Topologies require X resources in order to reserve
 '''
-topologies = restRequests.createCopyTopologies(velo, 'topologies/Abstract_topology.yaml', qty=1, topologyName='PerformanceTest')
+topologies = restRequests.createCopyTopologies(velo, 'topologies/Abstract_topology.yaml', qty=args.topologies	, topologyName='PerformanceTest')
 toDelete = updateToDelete(topologies, toDelete)
 
 #######################################################
@@ -59,7 +59,7 @@ toDelete = updateToDelete(topologies, toDelete)
 #######################################################
 '''			X Topologies require 5X resources in order to reserve
 '''
-topologies = restRequests.createCopyTopologies(velo, 'topologies/5LayerTopology.yaml', qty=1, topologyName='Performance5LayerTest')
+topologies = restRequests.createCopyTopologies(velo, 'topologies/5LayerTopology.yaml', qty=args.subtopologies, topologyName='Performance5LayerTest')
 toDelete = updateToDelete(topologies, toDelete)
 
 ############################################
