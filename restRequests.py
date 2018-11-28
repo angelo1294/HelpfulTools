@@ -3,6 +3,7 @@ import json, ast
 import time
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import yaml
+import sys
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 ############################
@@ -23,8 +24,21 @@ def indexManagement(qty='', startIndex='', stopIndex=''):
         stopIndex = qty + startIndex - 1 
     elif qty: 
         startIndex = 1
-        stopIndex = qty
+        stopIndex = qty + 1
     return startIndex, stopIndex
+
+###############################
+###Resources created messaging#
+###############################
+def outputNrOfElements(resourceType='', inputCount=0, outputCount=0):
+    if inputCount == outputCount:
+        print("Resource type: " + resourceType + " .All " + str(outputCount) + " resources were created successfully")
+        testResult = 0
+    else:
+        print("Error when creating resources: " + resourceType + " .Input: " + str(inputCount) + " .Output: " + str(outputCount))
+        testResult = 1
+    return testResult
+
 
 ###############################
 ##Create vSphere Clouds########
@@ -76,6 +90,8 @@ def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopInd
             topologyBody = yaml.load(stream)
         except yaml.YAMLError as exc:
             print(exc)
+            sys.exit(1)
+
     data = yaml.dump(topologyBody, default_flow_style=False)
     rq = requests.post(initPostUrl, data=data, verify=False, auth=('spirent', 'spirent'),
         headers={'Content-type': 'application/vnd.spirent-velocity.topology.tosca+yaml'})
@@ -86,7 +102,7 @@ def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopInd
 ####Index Management###########
     startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
 ####Copy the topology and publish it########
-    for i in range(startIndex, stopIndex+1):
+    for i in range(startIndex, stopIndex):
         raw = {}
         raw['name'] = topologyName + ' ' + str(i)
         raw['isAbstract'] = 'true'
@@ -105,9 +121,10 @@ def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopInd
             print('Topology publishing error. Message: ' + topology['message'])
         else:
             toDelete['topologyList'].append(topology['id'])
+    testResult = outputNrOfElements(topologyName, stopIndex-startIndex, len(toDelete["topologyList"]))
 ####Delete initial topology####
     rq = requests.delete(initPostUrl + '/' + initial['id'], verify=False, auth=('spirent', 'spirent'))
-    return toDelete
+    return toDelete, testResult
 ####Create reservation########
         # postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
         # reservationBody = {}
@@ -174,9 +191,10 @@ def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', s
 def reserveTopologies(velo, topologyIdList, start='', end='', duration='600'):
     postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
     toDelete = {'reservationList': []}
+    reservationName = 'Topology reservation test'
     for i,topId in enumerate(topologyIdList):
         raw = {}
-        raw['name'] = 'Topology reservation test' + str(i+1) 
+        raw['name'] = reservationName + str(i+1) 
         if duration:
             raw['duration'] = duration
         if start:
@@ -188,7 +206,8 @@ def reserveTopologies(velo, topologyIdList, start='', end='', duration='600'):
                           headers={'Content-type': 'application/json'})
         result = json.loads(rq.text)
         toDelete['reservationList'].append(result['id'])
-    return toDelete
+    testResult = outputNrOfElements(reservationName, len(topologyIdList), len(toDelete['reservationList']))
+    return toDelete, testResult
 
 
 ###################################
@@ -198,12 +217,13 @@ def createResources(velo, qty='', startIndex='', stopIndex='', templateId=''):
     BaseUrl = "https://" + velo + ".spirenteng.com/velocity/api/inventory/v8/device"
     templateId = 'fea52e8b-8d75-455e-baa5-80751d9625c7'
     toDelete = {'deviceList': []}
+    deviceName = 'RestApiPC'
 ####Index Management#####
     startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
 ####Create resources#####
-    for i in range(startIndex, stopIndex+1):
+    for i in range(startIndex, stopIndex):
         raw = {}
-        raw['name'] = 'RestApiPC' + str(i)
+        raw['name'] = deviceName + str(i)
         raw['templateId'] = templateId
         body = json.dumps(raw.copy())
         rq = requests.post(BaseUrl, data=body, verify=False, auth=('spirent', 'spirent'),
@@ -213,14 +233,13 @@ def createResources(velo, qty='', startIndex='', stopIndex='', templateId=''):
             print('Resource creation error. Message: ' + result['message'])
         else:
             toDelete['deviceList'].append(result['id'])
-        
-    #cleanup(delUrl, toDelete)
-    return toDelete
+    testResult = outputNrOfElements(deviceName, stopIndex-startIndex, len(toDelete['deviceList']))
+    return toDelete, testResult
 
 ################################################
 #########Cleanup Procedure######################
 ################################################
-def cleanup(toDelete={}, velo='vel-agrama-latest'):
+def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
     urlDict = { 'deviceList' : '.spirenteng.com/velocity/api/inventory/v8/device/', 'topologyList' : '.spirenteng.com/velocity/api/topology/v8/topology/','reservationList' : '.spirenteng.com/velocity/api/reservation/v11/reservation/'}
 ####Cancel reservation####
     try:
@@ -231,8 +250,10 @@ def cleanup(toDelete={}, velo='vel-agrama-latest'):
                 try:
                     if 'error' in rq.text:
                         print('Reservation cancel error. Message: ' + result['message'])
-                except:
-                    print('Script error in cleanup -> reservation cancel.Result object: \n' + result)
+                        testResult = 1
+                except Exception as error:
+                    print('Script error in cleanup -> reservation cancel. Error message: \n' + repl(error))
+                    testResult = 1
             toDelete.pop('reservationList')
     except KeyError:
         pass
@@ -245,8 +266,9 @@ def cleanup(toDelete={}, velo='vel-agrama-latest'):
             try:
                 if 'error' in rq.text:
                     print('Item delete error. Message: ' + result['message'])
-            except:
-                print('Script error in cleanup.Result object: \n' + result)
+            except Exception as error:
+                print('Script error in cleanup.Error message: \n' + error)
+    sys.exit(1)
 
 
 ############################
