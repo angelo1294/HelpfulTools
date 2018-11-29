@@ -251,10 +251,10 @@ def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
                 rq = requests.post(delUrl, verify=False, auth=('spirent', 'spirent'))
                 try:
                     if 'error' in rq.text:
-                        print('Reservation cancel error. Message: ' + result['message'])
+                        print('Reservation cancel error. Message: ' + rq.text)
                         testResult = 1
                 except Exception as error:
-                    print('Script error in cleanup -> reservation cancel. Error message: \n' + repl(error))
+                    print('Script error in cleanup -> reservation cancel. Error message: \n' + error.message)
                     testResult = 1
             toDelete.pop('reservationList')
     except KeyError:
@@ -267,10 +267,10 @@ def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
             rq = requests.delete(delUrl, verify=False, auth=('spirent', 'spirent'))
             try:
                 if 'error' in rq.text:
-                    print('Item delete error. Message: ' + result['message'])
+                    print('Item delete error. Message: ' + rq.text)
                     testResult = 1
             except Exception as error:
-                print('Script error in cleanup.Error message: \n' + error)
+                print('Script error in cleanup.Error message: \n' + error.message)
                 testResult = 1
     if testResult:
         sys.exit(1)
