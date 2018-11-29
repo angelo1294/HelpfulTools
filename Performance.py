@@ -43,8 +43,7 @@ atexit.register(restRequests.cleanup, toDelete=toDelete, velo=velo, testResult=t
 ###################################################
 ###Create resources and update cleaning object#####
 ###################################################
-'''			Beginning of Execution
-'''
+
 resources, testResult = restRequests.createResources(velo, args.resources)
 toDelete = updateToDelete(resources, toDelete)
 

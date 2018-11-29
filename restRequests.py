@@ -240,7 +240,9 @@ def createResources(velo, qty='', startIndex='', stopIndex='', templateId=''):
 #########Cleanup Procedure######################
 ################################################
 def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
-    urlDict = { 'deviceList' : '.spirenteng.com/velocity/api/inventory/v8/device/', 'topologyList' : '.spirenteng.com/velocity/api/topology/v8/topology/','reservationList' : '.spirenteng.com/velocity/api/reservation/v11/reservation/'}
+    urlDict = { 'deviceList' : '.spirenteng.com/velocity/api/inventory/v8/device/', 
+                'topologyList' : '.spirenteng.com/velocity/api/topology/v8/topology/',
+                'reservationList' : '.spirenteng.com/velocity/api/reservation/v11/reservation/'}
 ####Cancel reservation####
     try:
         if toDelete['reservationList']: 
@@ -266,10 +268,12 @@ def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
             try:
                 if 'error' in rq.text:
                     print('Item delete error. Message: ' + result['message'])
+                    testResult = 1
             except Exception as error:
                 print('Script error in cleanup.Error message: \n' + error)
-    sys.exit(1)
-
+                testResult = 1
+    if testResult:
+        sys.exit(1)
 
 ############################
 ########Execute#############
