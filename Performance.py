@@ -1,11 +1,27 @@
+import threading
 import restRequests
 import yaml
 import argparse
 import atexit
-import psutil
+import psutil, os
+import time
 
-def ceva():
-	print('something')
+###############################################
+###Get time and convert it to human readable###
+###############################################
+def printRuntime(seconds):
+	seconds = int(seconds)
+	if seconds < 60:
+		return str(seconds) + 's'
+	elif seconds < 3600:
+		minutes = seconds // 60
+		seconds = seconds - 60*minutes
+		return str(minutes) + 'm : ' + str(seconds) + 's'
+	else:
+		hours = seconds // 3600
+		minutes = (seconds - 3600*hours) // 60
+		seconds = seconds - 3600*hours - 60*minutes
+		return hours + 'h : ' + minutes + 'm : ' + seconds + 's'
 
 def updateToDelete(newDict, toUpdate):
 	for key in newDict:
@@ -17,25 +33,62 @@ def updateToDelete(newDict, toUpdate):
 				break
 	return toUpdate
 
-def performanceUtilization():
-	print('something')
+##################################################
+###Sample and output performance utilization data####
+##################################################
+def performanceUtilization(stop_event, interval):
+	utilization = {'cpu': {'min': 0, 'max': 0, 'values':[]}, 'memory': {'min': 0, 'max': 0, 'values':[]}}
+	startTime = time.clock()
+	while not stop_event.is_set():
+		try:
+			utilization['cpu']['values'].append(psutil.cpu_percent(interval=interval))
+			# utilization['memory']['values'].append(psutil.Process(os.getpid()).memory_info().rss / float(2 ** 20))
+			utilization['memory']['values'].append(round(psutil.virtual_memory().used / float(2 ** 20)))
+		except:
+			print('ERROR when getting cpu/memory info')
+	try:
+		utilization['cpu']['min'] = min(utilization['cpu']['values'])
+		utilization['cpu']['max'] = max(utilization['cpu']['values'])
+		utilization['memory']['min'] = min(utilization['memory']['values'])
+		utilization['memory']['max'] = max(utilization['memory']['values'])
+	except:
+		print('ERROR when assigning cpu/memory utilization data into dictionary')
+	try:
+		'''Output of CPU utilization '''
+		print('- CPU utilization(%) - ') 
+		print('Minimum: ' + str(utilization['cpu']['min'])) 
+		print('Maximum: ' + str(utilization['cpu']['max'])) 
+		print('Average: ' + str(round(sum( utilization['cpu']['values']) / len(utilization['cpu']['values']), 2)))
+	except:
+		print('ERROR when returning to output CPU utilization results')
+	try:
+		'''Output of Memory utilization '''
+		print('- Memory utilization(Mbs) - ')
+		print('Minimum: ' + str(utilization['memory']['min'])) 
+		print('Maximum: ' + str(utilization['memory']['max']))
+		print('Average: ' + str(round(sum( utilization['memory']['values']) / len(utilization['memory']['values']), 2)))
+	except:
+		print('ERROR when returning to output Memory utilization results')
+	try:
+		print('Execution time: ' + printRuntime(round(time.clock() - startTime)))
+	except:
+		print('ERROR when returning execution time')
+	print('- Execution finished -')
 
+###################################################
+###Main execution thread for performance testing###
+###################################################
 def executionThread():
-	########################
-	###Variable Definition##
-	########################
+	'''Variable Definition'''
 	velo = "vel-agrama-latest"
 	toDelete = {}
 	testResult = 0
 
-	######At script exit -> call cleanup##############
+	'''At script exit -> call cleanup'''
 	atexit.register(restRequests.cleanup, toDelete=toDelete, velo=velo, testResult=testResult)
-
-	###################################################
-	###Create resources and update cleaning object#####
-	###################################################
-
-	resources, testResult = restRequests.createResources(velo, 15)
+	
+	'''Create resources and update cleaning object'''
+	resources, testResult = restRequests.createResources(velo, agrs.resources)
 	toDelete = updateToDelete(resources, toDelete)
 
 	############################################
@@ -43,7 +96,7 @@ def executionThread():
 	############################################
 	'''			X Topologies require X resources in order to reserve
 	'''
-	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/Abstract_topology.yaml', qty=2, topologyName='PerformanceTestTopology')
+	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/Abstract_topology.yaml', qty=args.topologies, topologyName='PerformanceTestTopology')
 	toDelete = updateToDelete(topologies, toDelete)
 
 	#######################################################
@@ -51,7 +104,7 @@ def executionThread():
 	#######################################################
 	'''			X Topologies require 5X resources in order to reserve
 	'''
-	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/5LayerTopology.yaml', qty=2, topologyName='Performance5LayerTestTopology')
+	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/5LayerTopology.yaml', qty=args.subtopologies, topologyName='Performance5LayerTestTopology')
 	toDelete = updateToDelete(topologies, toDelete)
 
 	############################################
@@ -59,7 +112,6 @@ def executionThread():
 	############################################
 	reservations, testResult = restRequests.reserveTopologies(velo, topologies['topologyList'])
 	toDelete = updateToDelete(reservations, toDelete)
-
 
 
 ######Arguments parser##############
@@ -76,5 +128,14 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-	#executionThread()
-	ceva()
+	try:
+		interval = 10				#Interval to get cpu/memory utilization
+		pill2kill = threading.Event()
+		t = threading.Thread(target=performanceUtilization, args=(pill2kill, interval))
+		t.start()
+		executionThread()
+	except Exception as e:
+		print("ERROR at creating performanceUtilization thread or starting of execution")
+	finally:
+		pill2kill.set()
+		t.join()
