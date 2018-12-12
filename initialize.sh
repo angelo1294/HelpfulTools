@@ -1,5 +1,20 @@
 #!/bin/bash
 
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -v|--velocity)
+    EXTENSION="$2"
+    shift # past argument
+    shift # past value
+    ;;
+esac
+done
+
+
 libsList=("pyyaml" "requests" "argparse" "psutil")
 for lib in ${libsList[@]}; do
 	pip install $lib
@@ -9,6 +24,6 @@ then
 	echo "Agent is ok"
 else
 	chmod +x agent_service.sh
-	echo "yes" | ./agent_service.sh
+	echo "yes" | ./agent_service.sh -v ${VELOCITY}
 fi
 
