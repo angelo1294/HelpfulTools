@@ -78,9 +78,9 @@ def performanceUtilization(stop_event, interval):
 ###################################################
 ###Main execution thread for performance testing###
 ###################################################
-def executionThread():
+def executionThread(velo, resources, topologies, subtopologies):
 	'''Variable Definition'''
-	velo = "vel-agrama-latest"
+	#velo = "vel-agrama-latest"
 	toDelete = {}
 	testResult = 0
 
@@ -88,7 +88,7 @@ def executionThread():
 	atexit.register(restRequests.cleanup, toDelete=toDelete, velo=velo, testResult=testResult)
 	
 	'''Create resources and update cleaning object'''
-	resources, testResult = restRequests.createResources(velo, agrs.resources)
+	resources, testResult = restRequests.createResources(velo, resources)
 	toDelete = updateToDelete(resources, toDelete)
 
 	############################################
@@ -96,7 +96,7 @@ def executionThread():
 	############################################
 	'''			X Topologies require X resources in order to reserve
 	'''
-	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/Abstract_topology.yaml', qty=args.topologies, topologyName='PerformanceTestTopology')
+	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/Abstract_topology.yaml', qty=topologies, topologyName='PerformanceTestTopology')
 	toDelete = updateToDelete(topologies, toDelete)
 
 	#######################################################
@@ -104,7 +104,7 @@ def executionThread():
 	#######################################################
 	'''			X Topologies require 5X resources in order to reserve
 	'''
-	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/5LayerTopology.yaml', qty=args.subtopologies, topologyName='Performance5LayerTestTopology')
+	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/5LayerTopology.yaml', qty=subtopologies, topologyName='Performance5LayerTestTopology')
 	toDelete = updateToDelete(topologies, toDelete)
 
 	############################################
@@ -124,6 +124,7 @@ parser = argparse.ArgumentParser(description=
 parser.add_argument('-resources', help="Number of resources to create. Nr of resources must be: topologies + 5*subtopologies", type=int)
 parser.add_argument('-topologies', help="Number of topologies to create", type=int)
 parser.add_argument('-subtopologies', help="Number of 5 layer topologies to create", type=int)
+parser.add_argument('-vel', help="Velocity VM", type=int)
 args = parser.parse_args()
 
 
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 		pill2kill = threading.Event()
 		t = threading.Thread(target=performanceUtilization, args=(pill2kill, interval))
 		t.start()
-		executionThread()
+		executionThread(args.vel, args.resources, args.topologies, args.subtopologies)
 	except Exception as e:
 		print("ERROR at creating performanceUtilization thread or starting of execution")
 	finally:

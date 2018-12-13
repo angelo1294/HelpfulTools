@@ -48,26 +48,28 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-###Replace said char with - ###
-for var in {vcenter vel ite}; do
-	$(echo $var) = tr - \\- 
-
 ###Install libraries###
-# libsList=("pyyaml" "requests" "argparse" "psutil")
-# for lib in ${libsList[@]}; do
-# 	pip install $lib
-# done
+libsList=("pyyaml" "requests" "argparse" "psutil")
+for lib in ${libsList[@]}; do
+	pip install $lib
+done
 
-###Install powershell###
-# if (! pswh)
-# then
-# 	wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
-# 	sudo dpkg -i packages-microsoft-prod.deb
-# 	sudo apt-get update | echo Y
-# 	sudo apt-get install -y powershell
-# fi
+###Verify powershell is installed###
+if (! pwsh -v )
+then
+	#Install powershell
+	wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+	sudo dpkg -i packages-microsoft-prod.deb
+	sudo apt-get update | echo Y
+	sudo apt-get install -y powershell
+	#Instal PowerCLI module
+	pwsh -command  Install-Module VMware.PowerCLI -Scope CurrentUser
+	pwsh -command Set-PowerCLIConfiguration -Scope User -ParticipateInCEIP \$false -Confirm:\$false
+fi
+
 ###Execute script in powershell###
-pwsh changeBuild.sh -vcenter $vcenter -version $version -user $user -password $password -ite $ite -vel $vel
+pwsh -file changeBuild.sh $vcenter $vel $ite $version $user $password
+
 ###Check agent service###
 # if ( (service velocity-agent status)>0 )
 # then
