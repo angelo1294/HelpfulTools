@@ -5,6 +5,32 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import yaml
 import sys
 
+
+# 88888888888888888888888888888888888888888888888888888888888888888888888
+# 88.._|      | `-.  | `.  -_-_ _-_  _-  _- -_ -  .'|   |.'|     |  _..88
+# 88   `-.._  |    |`!  |`.  -_ -__ -_ _- _-_-  .'  |.;'   |   _.!-'|  88
+# 88      | `-!._  |  `;!  ;. _______________ ,'| .-' |   _!.i'     |  88
+# 88..__  |     |`-!._ | `.| |_______________||."'|  _!.;'   |     _|..88
+# 88   |``"..__ |    |`";.| i|_|MMMMMMMMMMM|_|'| _!-|   |   _|..-|'    88
+# 88   |      |``--..|_ | `;!|l|MMoMMMMoMMM|1|.'j   |_..!-'|     |     88
+# 88   |      |    |   |`-,!_|_|MMMMP'YMMMM|_||.!-;'  |    |     |     88
+# 88___|______|____!.,.!,.!,!|d|MMMo * loMM|p|,!,.!.,.!..__|_____|_____88
+# 88      |     |    |  |  | |_|MMMMb,dMMMM|_|| |   |   |    |      |  88
+# 88      |     |    |..!-;'i|r|MPYMoMMMMoM|r| |`-..|   |    |      |  88
+# 88      |    _!.-j'  | _!,"|_|M<>MMMMoMMM|_||!._|  `i-!.._ |      |  88
+# 88     _!.-'|    | _."|  !;|1|MbdMMoMMMMM|l|`.| `-._|    |``-.._  |  88
+# 88..-i'     |  _.''|  !-| !|_|MMMoMMMMoMM|_|.|`-. | ``._ |     |``"..88
+# 88   |      |.|    |.|  !| |u|MoMMMMoMMMM|n||`. |`!   | `".    |     88
+# 88   |  _.-'  |  .'  |.' |/|_|MMMMoMMMMoM|_|! |`!  `,.|    |-._|     88
+# 88  _!"'|     !.'|  .'| .'|[@]MMMMMMMMMMM[@] \|  `. | `._  |   `-._  88
+# 88-'    |   .'   |.|  |/| /                 \|`.  |`!    |.|      |`-88
+# 88      |_.'|   .' | .' |/                   \  \ |  `.  | `._-Lee|  88
+# 88     .'   | .'   |/|  /                     \ |`!   |`.|    `.  |  88
+# 88  _.'     !'|   .' | /                       \|  `  |  `.    |`.|  88
+# 88 vanishing point 888888888888888888888888888888888888888888888(FL)888
+
+
+
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 ############################
 ######Global Variables######
@@ -27,9 +53,9 @@ def indexManagement(qty='', startIndex='', stopIndex=''):
         stopIndex = qty + 1
     return startIndex, stopIndex
 
-###############################
-###Resources created messaging#
-###############################
+##################################
+###Resources created messaging####
+##################################
 def outputNrOfElements(resourceType='', inputCount=0, outputCount=0):
     if inputCount == outputCount:
         print("Resource type: " + resourceType + " .All " + str(outputCount) + " resources were created successfully")
@@ -39,44 +65,60 @@ def outputNrOfElements(resourceType='', inputCount=0, outputCount=0):
         testResult = 1
     return testResult
 
-
 ###############################
 ##Create vSphere Clouds########
 ###############################
-def createVsphereClouds (velo, qty='', startIndex='', stopIndex=''):
+def createVsphereClouds (velo, qty='', startIndex='', stopIndex='', cloudName='Performance vSphere Cloud', username='spirent@vshphere.local', password='Spirent123!', endpoint='https://vcenter-apt-dut.spirenteng.com/sdk'):
     BaseUrl = "https://"+velo+".spirenteng.com/velocity/api/cloud/v4/cloud"
+    toDelete = {'cloudList': []}
+####Index Management###
     startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
-    for i in range(startIndex, stopIndex+1):
+####Create Clouds####
+    for i in range(startIndex, stopIndex):
         body = {}
         body['providerType'] = 'VMWARE'
-        body['name'] = 'vSferaindex' + str(i),
+        body['name'] = cloudName + str(i)
         body['description'] = 'vSferaIndex Testing <-> Agrama teritory. Beware of clickbaits'
-        body['endpoint'] = 'https://vcenter-apt-dut.spirenteng.com/sdk'
-        body['credentials'] = {'username':'agrama@vshphere.local','password':'Agrama123!'}
+        body['endpoint'] = endpoint
+        body['credentials'] = {'username':username,'password':password}
         body = json.dumps(body)
         rq = requests.post(BaseUrl, data=body, verify=False, auth=('spirent', 'spirent'),
                            headers={'Content-type': 'application/json'})
-        print(rq.text)
+        result = json.loads(rq.text)
+        if 'errorId' in rq.text:
+            print('Resource creation error. Message: ' + result['message'])
+        else:
+            toDelete['cloudList'].append(result['id'])
+    testResult = outputNrOfElements(cloudName, stopIndex-startIndex, len(toDelete['cloudList']))
+    return toDelete, testResult
 
 ###############################
 ##Create OpenStack clouds######
 ###############################
-def createOpenStackClouds (velo, qty='', startIndex='', stopIndex=''):
+def createOpenStackClouds (velo, qty='', startIndex='', stopIndex='', cloudName='Performance OpenStack Cloud', username='admin_gimi', password='admin_gimi!', endpoint='http://10.140.71.22:5000/v3' ):
     BaseUrl = "https://"+velo+".spirenteng.com/velocity/api/cloud/v4/cloud"
+    toDelete = {'cloudList': []}
+####Index Management###
     startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
-
-    for i in range(startIndex, stopIndex+1):
+####Create Clouds####
+    for i in range(startIndex, stopIndex):
         body = {}
         body['providerType'] = 'OPEN_STACK'
-        body['name'] = 'OpixStiva' + str(i),
+        body['name'] = cloudName + str(i)
         body['description'] = 'OpixStiva <-> Agrama teritory. Beware of clickbaits'
-        body['endpoint'] = 'http://10.140.71.22:5000/v3'
-        body['credentials'] = {'username':'admin_gimi','password':'admin_gimi!'}
+        body['endpoint'] = endpoint
+        body['credentials'] = {'username':username,'password':password}
         body['properties'] = [{'id': 'domain', 'value': 'gimi_test'}, {'id': 'region', 'value': 'RegionOne'}, {'id': 'tenant', 'value': 'admin_gimi'}]
         body = json.dumps(body)
         rq = requests.post(BaseUrl, data=body, verify=False, auth=('spirent', 'spirent'),
                            headers={'Content-type': 'application/json'})
-        print(rq.text)
+        result = json.loads(rq.text)
+        if 'errorId' in rq.text:
+            print('Resource creation error. Message: ' + result['message'])
+        else:
+            toDelete['cloudList'].append(result['id'])
+    testResult = outputNrOfElements(cloudName, stopIndex-startIndex, len(toDelete['cloudList']))
+    return toDelete, testResult
 
 ########################################
 ##Copy published abstract topology######
@@ -84,14 +126,14 @@ def createOpenStackClouds (velo, qty='', startIndex='', stopIndex=''):
 def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopIndex='', topologyName='Performance Topology Test'):
     initPostUrl = "https://"+velo+".spirenteng.com/velocity/api/topology/v8/topology"
     toDelete = {'topologyList' : []}
-####Post initial topology#####
+####Open initial topology#####
     with open(topologyBodyPath, 'r') as stream:
         try:
             topologyBody = yaml.load(stream)
         except yaml.YAMLError as exc:
             print(exc)
             sys.exit(1)
-
+####Post initial topology###
     data = yaml.dump(topologyBody, default_flow_style=False)
     rq = requests.post(initPostUrl, data=data, verify=False, auth=('spirent', 'spirent'),
         headers={'Content-type': 'application/vnd.spirent-velocity.topology.tosca+yaml'})
@@ -125,23 +167,17 @@ def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopInd
 ####Delete initial topology####
     rq = requests.delete(initPostUrl + '/' + initial['id'], verify=False, auth=('spirent', 'spirent'))
     return toDelete, testResult
-####Create reservation########
-        # postReservationUrl = "https://"+velo+".spirenteng.com/velocity/api/reservation/v11/reservation"
-        # reservationBody = {}
-        # reservationBody['name'] = 'Reservation of test Topology ' + str(i)
-        # reservationBody['duration'] = '300'
-        # reservationBody['topologyId'] = topology['id']
-        # reservationBody = json.dumps(reservationBody)
-        # rq = requests.post(postReservationUrl, data=reservationBody, verify=False, auth=('spirent', 'spirent'),
-        #                   headers={'Content-type': 'application/json'})
-        # print(rq.text)
 
-###################################################################################################################################
-##Create port groups##########Start from a parent device with port group and create devices and port groups linked to this parent##
-###################################################################################################################################
-def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', startIndex='', stopIndex='', portsPerGroup='5'):
+
+##############################
+##Create port groups##########
+##############################
+def createPortGroups (velo, deviceTemplateId='fea52e8b-8d75-455e-baa5-80751d9625c7', portTemplateId='a5266606-f35b-482b-8c3f-a4317c1ccbb9', 
+                    qty='', startIndex='', stopIndex='', portsPerGroup=5, deviceName='Performance Port Group Test'):
+    
     devicePostUrl = "https://"+velo+".spirenteng.com/velocity/api/inventory/v8/device"
     toDelete = {'deviceList': []}
+    previousGroupId=''
 ####Create ports json#################
     portsBody = {}
     portsBody['ports'] = []
@@ -154,35 +190,40 @@ def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', s
 ####Index management##########################
     startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
 ########Device handling######################
-    for i in range(startIndex, stopIndex+1):
+    for i in range(startIndex, stopIndex):
         deviceBody = {}
-        deviceBody['name'] = 'Performance Port Group Test ' + str(i)
+        deviceBody['name'] = deviceName + str(i)
         deviceBody['templateId'] = deviceTemplateId
         deviceBody = json.dumps(deviceBody)
         rq = requests.post(devicePostUrl, data=deviceBody, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
         deviceResult = json.loads(rq.text)
+        if 'errorId' in rq.text:
+            print('Topology publishing error. Message: ' + deviceResult['message'])
+        else:
+            toDelete['deviceList'].append(deviceResult['id'])
 ########Port Group handling##############
         portGroupPostUrl = "https://"+velo+".spirenteng.com/velocity/api/inventory/v8/device/" + deviceResult['id'] + "/port_group"
         groupBody = {}
         groupBody['name'] = 'Port Group ' + str(i)
         manualAssociations = {}
-        manualAssociations['id'] = groupId
+        manualAssociations['id'] = previousGroupId
         groupBody['manualAssociations'] = [manualAssociations]
         groupBody = json.dumps(groupBody)
         rq = requests.post(portGroupPostUrl, data=groupBody, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
         portGroupResult = json.loads(rq.text)
-########Save group id as previous to link next time#####
+########Save group id as previous to link device port group to the next#####
         previousGroupId = portGroupResult['id']
-########Ports handling#################################
+# ########Ports handling####################
         portPostUrl = "https://"+velo+".spirenteng.com/velocity/api/inventory/v8/device/" + deviceResult['id'] + "/ports"
-
         for d in portsBody['ports']:
             d.update({'groupId':portGroupResult['id']})
         portsBodyResult = json.dumps(portsBody.copy())
         rq = requests.post(portPostUrl, data=portsBodyResult, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
+    testResult = outputNrOfElements(deviceName, stopIndex-startIndex, len(toDelete["deviceList"]))
+    return toDelete, testResult
 
 ###################################
 #######Reserve topologies##########
@@ -268,7 +309,8 @@ def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
     urlDict = { 'deviceList' : '.spirenteng.com/velocity/api/inventory/v8/device/', 
                 'topologyList' : '.spirenteng.com/velocity/api/topology/v8/topology/',
                 'reservationList' : '.spirenteng.com/velocity/api/reservation/v11/reservation/',
-                'abstractDeviceList' : '.spirenteng.com/velocity/api/inventory/v8/abstract_resource/'}
+                'abstractDeviceList' : '.spirenteng.com/velocity/api/inventory/v8/abstract_resource/',
+                'cloudList' : '.spirenteng.com/velocity/api/cloud/v4/cloud/'}
 ####Cancel reservation####
     try:
         if toDelete['reservationList']: 

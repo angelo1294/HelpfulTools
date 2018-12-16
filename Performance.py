@@ -6,26 +6,26 @@ import atexit
 import psutil, os
 import time
 
-# █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ 
-# █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █
-# █ █ █ █ █ █ █ ▀ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ▀ █ █ █ █ █ █ █
-# █ █ █ █ █ ▀ ░ ░ █ █ ▌ ░ ░ ░ ░ ░ ░ ░ ░ ░ ▐ █ █ ░ ░ ▀ █ █ █ █ █
-# █ █ █ █ ▀ ░ █ █ █ █ █ █ ░ ░ ░ ░ ░ ░ ░ █ █ █ █ █ █ ░ ▀ █ █ █ █
-# █ █ █ ▀ ░ █ █ █ █ █ █ █ █ ░ ░ ░ ░ ░ █ █ █ █ █ █ █ █ ░ ▀ █ █ █
-# █ █ ░ ░ █ █ █ █ █ █ █ █ █ █ ░ ░ ░ █ █ █ █ █ █ █ █ █ █ ░ ░ █ █
-# █ █ ░ █ █ █ █ █ █ █ █ █ █ █ ▌ ░ ▐ █ █ █ █ █ █ █ █ █ █ █ ░ ▐ █
-# █ ▌ ▐ █ █ █ █ █ ─ ─ ▀ █ █ █ ▌ ░ ▐ █ █ █ ▀ ─ ─ █ █ █ █ █ ▌ ▐ █
-# █ ▌ ▐ █ █ █ █ █ ▄ ─ ─ ▐ █ █ ░ ░ ░ █ █ ─ ─ ─ ▄ █ █ █ █ █ ▌ ▐ █
-# █ ▌ ░ █ █ █ █ █ █ █ █ █ █ ░ ░ ░ ░ ░ █ █ █ █ █ █ █ █ █ █ ░ ▐ █
-# █ ▌ ░ ░ █ █ █ █ █ █ █ █ ░ ░ ░ ░ ░ ░ ░ █ █ █ █ █ █ █ █ ░ ░ ▐ █
-# █ ▌ ░ ░ ░ ░ █ █ █ █ █ ░ ░ ░ ░ ░ ░ ░ ░ ░ █ █ █ █ █ ░ ░ ░ ░ ▐ █
-# █ █ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ █ █
-# █ █ █ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ █ █ █
-# █ █ █ █ ░ ░ ░ █ ▄ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ▄ █ ░ ░ ░ █ █ █ █
-# █ █ █ █ █ ░ ░ ░ ▀ █ █ █ █ █ █ █ █ █ █ █ █ █ ▀ ░ ░ ░ █ █ █ █ █
-# █ █ █ █ █ █ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ █ █ █ █ █ █
-# █ █ █ █ █ █ █ ▄ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ▄ █ █ █ █ █ █ █
-# █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █
+# ███████████████████████████████ 
+# ███████████████████████████████
+# ███████▀░░░░░░░░░░░░░░░▀███████
+# █████▀░░██▌░░░░░░░░░▐██░░▀█████
+# ████▀░██████░░░░░░░██████░▀████
+# ███▀░████████░░░░░████████░▀███
+# ██░░██████████░░░██████████░░██
+# ██░███████████▌░▐███████████░▐█
+# █▌▐█████──▀███▌░▐███▀──█████▌▐█
+# █▌▐█████▄──▐██░░░██───▄█████▌▐█
+# █▌░██████████░░░░░██████████░▐█
+# █▌░░████████░░░░░░░████████░░▐█
+# █▌░░░░█████░░░░░░░░░█████░░░░▐█
+# ██░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+# ███░░░░░░░░░░░░░░░░░░░░░░░░░███
+# ████░░░█▄░░░░░░░░░░░░░▄█░░░████
+# █████░░░▀█████████████▀░░░█████
+# ██████░░░░░░░░░░░░░░░░░░░██████
+# ███████▄░░░░░░░░░░░░░░░▄███████
+# ███████████████████████████████
 
 
 ###############################################
@@ -60,7 +60,7 @@ def updateToDelete(newDict, toUpdate):
 ##################################################
 def performanceUtilization(stop_event, interval):
 	utilization = {'cpu': {'min': 0, 'max': 0, 'values':[]}, 'memory': {'min': 0, 'max': 0, 'values':[]}}
-	startTime = time.clock()
+	startTime = time.perf_counter()
 	while not stop_event.is_set():
 		try:
 			utilization['cpu']['values'].append(psutil.cpu_percent(interval=interval))
@@ -92,7 +92,7 @@ def performanceUtilization(stop_event, interval):
 	except:
 		print('ERROR when returning to output Memory utilization results')
 	try:
-		print('Execution time: ' + printRuntime(round(time.clock() - startTime)))
+		print('Execution time: ' + printRuntime(round(time.perf_counter() - startTime)))
 	except:
 		print('ERROR when returning execution time')
 	print('- Execution finished -')
@@ -100,44 +100,69 @@ def performanceUtilization(stop_event, interval):
 ###################################################
 ###Main execution thread for performance testing###
 ###################################################
-def executionThread(velo, resources, abstractResources, topologies, subtopologies):
+def executionThread(velo, resources, abstractResources, topologies, subtopologies, portGroupsResources, vSphereClouds, openstackClouds):
 	'''Variable Definition'''
 	#velo = "vel-agrama-latest"
 	toDelete = {}
 	testResult = 0
+	print('- Begining of execution -')
 
 	'''At script exit -> call cleanup'''
 	atexit.register(restRequests.cleanup, toDelete=toDelete, velo=velo, testResult=testResult)
-	
+
+	##############################
+	######Create Resources########
+	##############################
 	'''Create resources and update cleaning object'''
-	resources, testResult = restRequests.createResources(velo, resources)
-	toDelete = updateToDelete(resources, toDelete)
+	# resources, testResult = restRequests.createResources(velo, resources)
+	# toDelete = updateToDelete(resources, toDelete)
 
 	'''Create abstract resources and update cleaning object'''
-	abstractResources, testResult = restRequests.createAbstractResources(velo, abstractResources, condition='template[PC]')
-	toDelete = updateToDelete(abstractResources, toDelete)
+	# abstractResources, testResult = restRequests.createAbstractResources(velo, abstractResources, condition='template[PC]')
+	# toDelete = updateToDelete(abstractResources, toDelete)
 
 	############################################
 	###Publish topology and copy it X times#####
 	############################################
 	'''			X Topologies require X resources in order to reserve
 	'''
-	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/Abstract_topology.yaml', qty=topologies, topologyName='PerformanceTestTopology')
-	toDelete = updateToDelete(topologies, toDelete)
+	# topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/Abstract_topology.yaml', qty=topologies, topologyName='PerformanceTestTopology')
+	# toDelete = updateToDelete(topologies, toDelete)
 
-	#######################################################
-	###Publish 5 layer subtopology and copy it X times#####
-	#######################################################
-	'''			X Topologies require 5X resources in order to reserve
+	# #######################################################
+	# ###Publish 5 layer subtopology and copy it X times#####
+	# #######################################################
+	# '''			X Topologies require 5X resources in order to reserve
+	# '''
+	# topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/5LayerTopology.yaml', qty=subtopologies, topologyName='Performance5LayerTestTopology')
+	# toDelete = updateToDelete(topologies, toDelete)
+
+	# ############################################
+	# ##########Reserve topologies################
+	# ############################################
+	# reservations, testResult = restRequests.reserveTopologies(velo, topologies['topologyList'])
+	# toDelete = updateToDelete(reservations, toDelete)
+
+	##################################################
+	#####Create devices with ports and port groups####
+	##################################################
+	'''Create resources and add ports and port groups
 	'''
-	topologies, testResult = restRequests.createCopyTopologies(velo, 'topologies/5LayerTopology.yaml', qty=subtopologies, topologyName='Performance5LayerTestTopology')
-	toDelete = updateToDelete(topologies, toDelete)
+	portGroupsResources, testResult = restRequests.createPortGroups(velo, qty=portGroupsResources)
+	toDelete = updateToDelete(portGroupsResources, toDelete)
 
-	############################################
-	##########Reserve topologies################
-	############################################
-	reservations, testResult = restRequests.reserveTopologies(velo, topologies['topologyList'])
-	toDelete = updateToDelete(reservations, toDelete)
+	########################
+	###Create Clouds########
+	########################
+	'''Create vSphere Clouds
+	'''
+	# vSphereClouds, testResult = restRequests.createVsphereClouds(velo, qty=vSphereClouds)
+	# toDelete = updateToDelete(vSphereClouds, toDelete)
+
+	# '''Create vSphere Clouds
+	# '''
+	# openstackClouds, testResult = restRequests.createOpenStackClouds(velo, qty=openstackClouds)
+	# toDelete = updateToDelete(openstackClouds, toDelete)
 
 
 ######Arguments parser##############
@@ -148,8 +173,12 @@ parser = argparse.ArgumentParser(description=
 
 ######Argument List###################
 parser.add_argument('-resources', help="Number of resources to create. Nr of resources must be: topologies + 5*subtopologies", type=int)
+parser.add_argument('-abstractResources', help="Number of abstract resources to create", type=int)
 parser.add_argument('-topologies', help="Number of topologies to create", type=int)
 parser.add_argument('-subtopologies', help="Number of 5 layer topologies to create", type=int)
+parser.add_argument('-portGroupsResources', help="Number of devices with port groups linked to each other", type=int)
+parser.add_argument('-vSphereClouds', help="Number of vSphere clouds to create", type=int)
+parser.add_argument('-openstackClouds', help="Number of OpenStack clouds to create", type=int)
 parser.add_argument('-vel', help="Velocity VM", type=int)
 args = parser.parse_args()
 
@@ -160,10 +189,10 @@ if __name__ == '__main__':
 		pill2kill = threading.Event()
 		t = threading.Thread(target=performanceUtilization, args=(pill2kill, interval))
 		t.start()
-		# executionThread(args.vel, args.resources, args.topologies, args.subtopologies)
-		executionThread('vel-agrama-latest', 10, 5, 1, 1)
+		# executionThread(args.vel, args.resources, args.topologies, args.subtopologies, args.portGroupsResources, args.vSphereClouds, args.openstackClouds)
+		executionThread('vel-agrama-latest', 10, 5, 1, 1, 5, 2, 2)
 	except Exception as e:
-		print("ERROR at creating performanceUtilization thread or starting of execution")
+		print("ERROR at creating performanceUtilization thread or starting of execution: " + str(e))
 	finally:
 		pill2kill.set()
 		t.join()
