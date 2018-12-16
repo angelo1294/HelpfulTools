@@ -1,61 +1,90 @@
 #!/bin/bash
 
-$vcenter = $args[0]
-$vel = $args[1]
-$ite = $args[2]
-$version = $args[3]
-$user = $args[4]
-$password = $args[5]
+#                          __    _                                   
+#                     _wr""        "-q__                             
+#                  _dP                 9m_     
+#                _#P                     9#_                         
+#               d#@                       9#m                        
+#              d##                         ###                       
+#             J###                         ###L                      
+#             {###K                       J###K                      
+#             ]####K      ___aaa___      J####F                      
+#         __gmM######_  w#P""   ""9#m  _d#####Mmw__                  
+#      _g##############mZ_         __g##############m_               
+#    _d####M@PPPP@@M#######Mmp gm#########@@PPP9@M####m_             
+#   a###""          ,Z"#####@" '######"\g          ""M##m            
+#  J#@"             0L  "*##     ##@"  J#              *#K           
+#  #"               `#    "_gmwgm_~    dF               `#_          
+# 7F                 "#_   ]#####F   _dK                 JE          
+# ]                    *m__ ##### __g@"                   F          
+#                        "PJ#####LP"                                 
+#  `                       0######_                      '           
+#                        _0########_                                   
+#      .               _d#####^#####m__              ,              
+#       "*w_________am#####P"   ~9#####mw_________w*"                  
+#           ""9@#####@M""           ""P@#####@M""  
 
-###Connect to vCenter###
-Connect-VIServer -Server $vcenter -User $user -Password $password
 
-###Get last build for Velocity###
-$result = get-childitem vmstore:\Sunnyvale-Lab\live-iso\vel\${version}\build -Recurse -Include *.iso | Select Name
-if( $result.length -gt 1 )
-{
-	$result = $($result.name | sort -n)
-	$velBuild = $result[-1]
-}
-else
-{
-	$velBuild = $result.name
-}
-$velIso = "vel\${version}\build\${velBuild}"
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
 
-# ###Get last build for ITE###
-$result = get-childitem vmstore:\Sunnyvale-Lab\live-iso\ite\${version}\build -Recurse -Include *.iso | Select Name
-if ( $result.length -gt 1 )
-{
-	$result = $($result.name | sort -n)
-	$iteBuild = $result[-1]
-}
-else
-{
-	$iteBuild = $result.name
-}
-$iteIso = "ite\${version}\build\${iteBuild}"
+case $key in
+    -vcenter|--vcenter)
+    vcenter="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -vel|--vel)
+    vel="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -ite|--ite)
+    ite="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -version|--version)
+    version="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -user|--user)
+    user="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -password|--password)
+    password="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    --default)
+    DEFAULT=YES
+    shift # past argument
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
 
-###Power off ite and change build
-if( $(get-vm $ite).PowerState -ne "PoweredOff" )
-{
-	stop-vm $ite -confirm:$false 
-}
-Get-CDDrive $ite | Set-CDDrive -IsoPath "[live-iso] ${iteIso}" -Confirm:$false
+###Verify powershell is installed###
+if (! pwsh -v )
+then
+	#Install powershell
+	wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+	sudo dpkg -i packages-microsoft-prod.deb
+	sudo apt-get update | echo Y
+	sudo apt-get install -y powershell
+	#Instal PowerCLI module
+	pwsh -command  Install-Module VMware.PowerCLI -Scope CurrentUser
+	pwsh -command Set-PowerCLIConfiguration -Scope User -ParticipateInCEIP \$false -Confirm:\$false
+fi
 
-###Power off velo and change build
-if( $(get-vm $vel).PowerState -ne "PoweredOff" )
-{
-	stop-vm $vel -confirm:$false
-}
-
-Get-CDDrive $vel | Set-CDDrive -IsoPath "[live-iso] ${velIso}" -Confirm:$false
-
-###Power on ITE and wait for it to boot###
-start-vm $ite -confirm:$false
-sleep 120
-###Power on Velocity once ITE is up and running###
-start-vm $vel -confirm:$false
-
-###Exit pwsh###
-exit
+###Execute script in powershell###
+pwsh -file changeBuildPWSH.sh $vcenter $vel $ite $version $user $password

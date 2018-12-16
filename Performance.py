@@ -6,6 +6,28 @@ import atexit
 import psutil, os
 import time
 
+# █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ 
+# █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █
+# █ █ █ █ █ █ █ ▀ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ▀ █ █ █ █ █ █ █
+# █ █ █ █ █ ▀ ░ ░ █ █ ▌ ░ ░ ░ ░ ░ ░ ░ ░ ░ ▐ █ █ ░ ░ ▀ █ █ █ █ █
+# █ █ █ █ ▀ ░ █ █ █ █ █ █ ░ ░ ░ ░ ░ ░ ░ █ █ █ █ █ █ ░ ▀ █ █ █ █
+# █ █ █ ▀ ░ █ █ █ █ █ █ █ █ ░ ░ ░ ░ ░ █ █ █ █ █ █ █ █ ░ ▀ █ █ █
+# █ █ ░ ░ █ █ █ █ █ █ █ █ █ █ ░ ░ ░ █ █ █ █ █ █ █ █ █ █ ░ ░ █ █
+# █ █ ░ █ █ █ █ █ █ █ █ █ █ █ ▌ ░ ▐ █ █ █ █ █ █ █ █ █ █ █ ░ ▐ █
+# █ ▌ ▐ █ █ █ █ █ ─ ─ ▀ █ █ █ ▌ ░ ▐ █ █ █ ▀ ─ ─ █ █ █ █ █ ▌ ▐ █
+# █ ▌ ▐ █ █ █ █ █ ▄ ─ ─ ▐ █ █ ░ ░ ░ █ █ ─ ─ ─ ▄ █ █ █ █ █ ▌ ▐ █
+# █ ▌ ░ █ █ █ █ █ █ █ █ █ █ ░ ░ ░ ░ ░ █ █ █ █ █ █ █ █ █ █ ░ ▐ █
+# █ ▌ ░ ░ █ █ █ █ █ █ █ █ ░ ░ ░ ░ ░ ░ ░ █ █ █ █ █ █ █ █ ░ ░ ▐ █
+# █ ▌ ░ ░ ░ ░ █ █ █ █ █ ░ ░ ░ ░ ░ ░ ░ ░ ░ █ █ █ █ █ ░ ░ ░ ░ ▐ █
+# █ █ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ █ █
+# █ █ █ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ █ █ █
+# █ █ █ █ ░ ░ ░ █ ▄ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ▄ █ ░ ░ ░ █ █ █ █
+# █ █ █ █ █ ░ ░ ░ ▀ █ █ █ █ █ █ █ █ █ █ █ █ █ ▀ ░ ░ ░ █ █ █ █ █
+# █ █ █ █ █ █ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ █ █ █ █ █ █
+# █ █ █ █ █ █ █ ▄ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ░ ▄ █ █ █ █ █ █ █
+# █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █
+
+
 ###############################################
 ###Get time and convert it to human readable###
 ###############################################
@@ -78,7 +100,7 @@ def performanceUtilization(stop_event, interval):
 ###################################################
 ###Main execution thread for performance testing###
 ###################################################
-def executionThread(velo, resources, topologies, subtopologies):
+def executionThread(velo, resources, abstractResources, topologies, subtopologies):
 	'''Variable Definition'''
 	#velo = "vel-agrama-latest"
 	toDelete = {}
@@ -90,6 +112,10 @@ def executionThread(velo, resources, topologies, subtopologies):
 	'''Create resources and update cleaning object'''
 	resources, testResult = restRequests.createResources(velo, resources)
 	toDelete = updateToDelete(resources, toDelete)
+
+	'''Create abstract resources and update cleaning object'''
+	abstractResources, testResult = restRequests.createAbstractResources(velo, abstractResources, condition='template[PC]')
+	toDelete = updateToDelete(abstractResources, toDelete)
 
 	############################################
 	###Publish topology and copy it X times#####
@@ -134,7 +160,8 @@ if __name__ == '__main__':
 		pill2kill = threading.Event()
 		t = threading.Thread(target=performanceUtilization, args=(pill2kill, interval))
 		t.start()
-		executionThread(args.vel, args.resources, args.topologies, args.subtopologies)
+		# executionThread(args.vel, args.resources, args.topologies, args.subtopologies)
+		executionThread('vel-agrama-latest', 10, 5, 1, 1)
 	except Exception as e:
 		print("ERROR at creating performanceUtilization thread or starting of execution")
 	finally:

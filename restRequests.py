@@ -141,6 +141,7 @@ def createCopyTopologies (velo, topologyBodyPath, qty='', startIndex='', stopInd
 ###################################################################################################################################
 def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', startIndex='', stopIndex='', portsPerGroup='5'):
     devicePostUrl = "https://"+velo+".spirenteng.com/velocity/api/inventory/v8/device"
+    toDelete = {'deviceList': []}
 ####Create ports json#################
     portsBody = {}
     portsBody['ports'] = []
@@ -161,7 +162,6 @@ def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', s
         rq = requests.post(devicePostUrl, data=deviceBody, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
         deviceResult = json.loads(rq.text)
-        print(rq.text)
 ########Port Group handling##############
         portGroupPostUrl = "https://"+velo+".spirenteng.com/velocity/api/inventory/v8/device/" + deviceResult['id'] + "/port_group"
         groupBody = {}
@@ -173,7 +173,6 @@ def createPortGroups (velo, deviceTemplateId, portTemplateId, groupId, qty='', s
         rq = requests.post(portGroupPostUrl, data=groupBody, verify=False, auth=('spirent', 'spirent'),
                           headers={'Content-type': 'application/json'})
         portGroupResult = json.loads(rq.text)
-        #print(rq.text)
 ########Save group id as previous to link next time#####
         previousGroupId = portGroupResult['id']
 ########Ports handling#################################
@@ -217,7 +216,7 @@ def createResources(velo, qty='', startIndex='', stopIndex='', templateId=''):
     BaseUrl = "https://" + velo + ".spirenteng.com/velocity/api/inventory/v8/device"
     templateId = 'fea52e8b-8d75-455e-baa5-80751d9625c7'
     toDelete = {'deviceList': []}
-    deviceName = 'RestApiPC'
+    deviceName = 'Performance PC'
 ####Index Management#####
     startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
 ####Create resources#####
@@ -236,13 +235,40 @@ def createResources(velo, qty='', startIndex='', stopIndex='', templateId=''):
     testResult = outputNrOfElements(deviceName, stopIndex-startIndex, len(toDelete['deviceList']))
     return toDelete, testResult
 
+###################################
+#######Create Abstract resources Resources(PC)########
+###################################        
+def createAbstractResources(velo, qty='', startIndex='', stopIndex='', condition=''):
+    BaseUrl = "https://" + velo + ".spirenteng.com/velocity/api/inventory/v8/abstract_resource"
+    toDelete = {'abstractDeviceList': []}
+    deviceName = 'Abstract Performance Device'
+####Index Management#####
+    startIndex, stopIndex = indexManagement(qty, startIndex, stopIndex)
+####Create resources#####
+    for i in range(startIndex, stopIndex):
+        raw = {}
+        raw['name'] = deviceName + str(i)
+        raw['type'] = 'DEVICE'
+        raw['condition'] = condition
+        body = json.dumps(raw.copy())
+        rq = requests.post(BaseUrl, data=body, verify=False, auth=('spirent', 'spirent'),
+                           headers={'Content-type': 'application/json'})
+        result = json.loads(rq.text)
+        if 'errorId' in rq.text:
+            print('Resource creation error. Message: ' + result['message'])
+        else:
+            toDelete['abstractDeviceList'].append(result['id'])
+    testResult = outputNrOfElements(deviceName, stopIndex-startIndex, len(toDelete['abstractDeviceList']))
+    return toDelete, testResult
+
 ################################################
 #########Cleanup Procedure######################
 ################################################
 def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
     urlDict = { 'deviceList' : '.spirenteng.com/velocity/api/inventory/v8/device/', 
                 'topologyList' : '.spirenteng.com/velocity/api/topology/v8/topology/',
-                'reservationList' : '.spirenteng.com/velocity/api/reservation/v11/reservation/'}
+                'reservationList' : '.spirenteng.com/velocity/api/reservation/v11/reservation/',
+                'abstractDeviceList' : '.spirenteng.com/velocity/api/inventory/v8/abstract_resource/'}
 ####Cancel reservation####
     try:
         if toDelete['reservationList']: 
@@ -261,7 +287,6 @@ def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
         pass
 ####Delete elements#######
     for key in toDelete:
-        #delList = toDelete[key]
         for elem in toDelete[key]:
             delUrl = 'https://' + velo + urlDict[key] + elem
             rq = requests.delete(delUrl, verify=False, auth=('spirent', 'spirent'))
@@ -274,10 +299,3 @@ def cleanup(toDelete={}, velo='vel-agrama-latest', testResult=0):
                 testResult = 1
     if testResult:
         sys.exit(1)
-
-############################
-########Execute#############
-############################
-#reserveTopologies(vel, vSphereTopologyIdList, duration='120', start='1541069309000')
-#createResources(vel, qty=1)
-#createCopyTopologies()
