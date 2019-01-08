@@ -1,0 +1,52 @@
+{
+  "defaultData": {
+	"owner":"agrama",
+	"description":"This description is Legend, wait for it, Dary! Legendary!",
+    "hidden": false,
+    "timeout": 10,
+    "verdictMethod": "EXIT_CODE_VERDICT_PARSING",
+    "commandSequence": [
+      "%file% %parameterNameValuePairList%"
+    ],
+    "executionMessages": {
+      "ok": ".*verified.*",
+      "info": ".*DEBUG.*|.*INFO.*",
+      "warning": ".*WARNING.*",
+      "error": ".*ERROR.*|.*CRITICAL.*"
+    },
+    "verdictParsing": {
+      "passTest": "Finished: PASSED",
+      "passTestIfNotAlreadyFailed": "SUCCESS",
+      "failTestIfPassing": "Failure number \\d+",
+      "failTest": "Finished: FAILED"
+    }
+  },
+  "fileSets": [
+    {
+      "fileNameMatch": ".*l3vpn\\.py",
+      "description": "L3VPN domain body build",
+      "language": "python",
+      "parameters": [
+        {
+          "name": "velocity",
+          "type": "TEXT",
+          "value": "Velocity",
+          "description": "Velocity in Use"
+        },
+		{
+          "name": "username",
+          "type": "TEXT",
+          "value": "spirent",
+          "description": "User Id for Velocity login"
+        },
+		{
+          "name": "password",
+          "type": "TEXT",
+			"masked": true,
+          "value": "spirent",
+          "description": "Password for Velocity login"
+        }
+      ]
+    }
+  ]
+}
